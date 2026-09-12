@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+  --font-display: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  --color-console: #1c2026;
+  --color-face: #2a3038;
+  --color-rail: #3a424c;
+  --color-ink: #ece8df;
+  --color-mute: #9aa3ad;
+  --color-phosphor: #e3b341;
+  --color-paper: #efece3;
+  --color-stamp: #1b1d21;
+  --color-warn: #d7784a;
+}
+
+html {
+  background: var(--color-console);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--color-console);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01" on;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-phosphor) 70%, black);
+  color: #1b1608;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-phosphor);
+  outline-offset: 3px;
+}
+
+input[type="file"] {
+  color: var(--color-mute);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
