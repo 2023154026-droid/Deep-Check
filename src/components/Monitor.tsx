@@ -33,7 +33,7 @@ export function Monitor({ file, preview, busy, error, onPick, onFile }: Props) {
           if (next) onFile(next);
         }}
         aria-label="영상 또는 사진 파일 선택"
-        className={`relative flex min-h-[240px] w-full items-center justify-center overflow-hidden border text-left md:min-h-[320px] ${
+        className={`relative flex min-h-[340px] aspect-[16/10] max-h-[min(72vh,680px)] w-full items-center justify-center overflow-hidden border text-left md:min-h-[520px] ${
           over || error
             ? "border-phosphor"
             : "border-rail"
@@ -44,12 +44,12 @@ export function Monitor({ file, preview, busy, error, onPick, onFile }: Props) {
             <img
               src={preview}
               alt="올린 사진 미리보기"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain bg-[#0b0e12]"
             />
           ) : (
             <video
               src={preview}
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain bg-[#0b0e12]"
               muted
               playsInline
               loop
