@@ -7,9 +7,16 @@ function Meter({
 }: {
   label: string;
   value: number;
-  accent?: "ai" | "real";
+  accent?: "ai" | "real" | "edit";
 }) {
-  const color = accent === "ai" ? "bg-[#8a4d28] text-[#8a4d28]" : accent === "real" ? "bg-[#3f4a3c] text-stamp" : "bg-stamp text-stamp";
+  const color =
+    accent === "ai"
+      ? "bg-[#8a4d28] text-[#8a4d28]"
+      : accent === "real"
+        ? "bg-[#3f4a3c] text-stamp"
+        : accent === "edit"
+          ? "bg-[#8a6a32] text-[#8a6a32]"
+          : "bg-stamp text-stamp";
   const [bar, text] = color.split(" ");
   return (
     <div>
@@ -28,12 +35,15 @@ function Meter({
 
 export function ResultSlip({ result }: { result: Analysis }) {
   const evidenceTitle = result.kind === "image" ? "관찰 포인트" : "의심 구간";
-  const realFirst = result.aiChance < 42;
   const meters = [
-    { label: "AI로 만들었을 가능성", value: result.aiChance, accent: "ai" as const },
     { label: "실제 촬영 가능성", value: result.realChance, accent: "real" as const },
+    { label: "AI로 만들었을 가능성", value: result.aiChance, accent: "ai" as const },
+    { label: "보정 가능성", value: result.editChance, accent: "edit" as const },
   ];
-  if (realFirst) meters.reverse();
+  if (result.aiChance >= 42) {
+    const [real, ai, edit] = meters;
+    meters.splice(0, 3, ai, real, edit);
+  }
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-16 md:px-8">
@@ -52,7 +62,7 @@ export function ResultSlip({ result }: { result: Analysis }) {
         <div className="grid gap-0 md:grid-cols-[0.9fr_1.1fr]">
           <div className="border-b border-[#d4cfc3] p-6 md:border-r md:border-b-0 md:p-10">
             <p className="font-mono text-[11px] tracking-[0.16em] text-[#6a5340]">
-              {result.kind === "image" ? "STILL" : "CLIP"} · 생성 신호 {result.aiSignals}개
+              {result.kind === "image" ? "STILL" : "CLIP"} · 생성 {result.aiSignals} · 보정 {result.editSignals}
             </p>
             <p className="mt-3 font-display text-4xl tracking-[-0.04em]">
               {result.verdict}
@@ -73,14 +83,22 @@ export function ResultSlip({ result }: { result: Analysis }) {
                 <li key={`${mark.time}-${mark.label}`}>
                   <p
                     className={`font-mono text-sm ${
-                      mark.tone === "real" ? "text-[#3f4a3c]" : mark.tone === "ai" ? "text-[#8a4d28]" : "text-[#6a5340]"
+                      mark.tone === "real"
+                        ? "text-[#3f4a3c]"
+                        : mark.tone === "ai"
+                          ? "text-[#8a4d28]"
+                          : mark.tone === "edit"
+                            ? "text-[#8a6a32]"
+                            : "text-[#6a5340]"
                     }`}
                   >
                     {mark.tone === "real"
                       ? "REAL"
-                      : result.kind === "image"
-                        ? "PHOTO"
-                        : formatTimecode(mark.time)}
+                      : mark.tone === "edit"
+                        ? "EDIT"
+                        : result.kind === "image"
+                          ? "PHOTO"
+                          : formatTimecode(mark.time)}
                   </p>
                   <p className="mt-1 text-base font-medium">{mark.label}</p>
                   <p className="mt-1 max-w-[52ch] text-sm leading-relaxed text-[#4f544c]">

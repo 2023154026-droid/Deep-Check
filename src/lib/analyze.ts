@@ -7,7 +7,7 @@ export type Mark = {
   time: number;
   label: string;
   detail: string;
-  tone?: "ai" | "real";
+  tone?: "ai" | "real" | "edit";
 };
 
 export type Analysis = {
@@ -18,7 +18,9 @@ export type Analysis = {
   height: number;
   realChance: number;
   aiChance: number;
+  editChance: number;
   aiSignals: number;
+  editSignals: number;
   level: "낮음" | "주의" | "높음";
   verdict: string;
   summary: string;
@@ -147,10 +149,10 @@ function buildCall(ai: number, kind: "video" | "image") {
 function notesFor(kind: "video" | "image") {
   return [
     kind === "image"
-      ? "이 점수는 브라우저에서 읽은 선명도, 색 분포, 입자 정도를 본 휴리스틱입니다."
-      : "이 점수는 브라우저에서 뽑은 프레임의 움직임, 선명도, 색 분포를 본 휴리스틱입니다.",
-    "최신 생성 모델은 이 신호를 피해 갈 수 있고, 거친 실사도 의심으로 잡힐 수 있습니다.",
-    "공유 전 원출처와 다른 각도 자료를 한 번 더 확인하세요.",
+      ? "생성 점수와 보정 점수는 따로 봅니다. 보정은 포토샵·필터·색보정 흔적이고, AI 생성과는 다릅니다."
+      : "생성 점수와 보정 점수는 따로 봅니다. 영상은 파일 이름·채도로 보정 흔적을 가늠합니다.",
+    "편집 앱 이름이나 매끈함, 채도가 있으면 보정 가능성이 올라갑니다. 보정 여부의 확정은 아닙니다.",
+    "메신저로 받은 파일은 정보가 빠질 수 있습니다. 가능하면 원본으로 다시 보세요.",
   ];
 }
 
@@ -294,7 +296,9 @@ async function analyzeImage(
       height: img.naturalHeight,
       realChance,
       aiChance: ai,
+      editChance: 10,
       aiSignals,
+      editSignals: 0,
       level,
       verdict,
       summary,
@@ -415,7 +419,9 @@ export async function analyzeVideo(
       height: video.videoHeight,
       realChance,
       aiChance: ai,
+      editChance: 10,
       aiSignals,
+      editSignals: 0,
       level,
       verdict,
       summary,

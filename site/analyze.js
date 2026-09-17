@@ -114,6 +114,8 @@ const AI_SOFTWARE =
   /midjourney|dall-?e|stable diffusion|firefly|leonardo|novelai|chatgpt|openai|gemini|imagen|flux|bing image|nightcafe|ideogram/i;
 const CAMERA_MAKE =
   /apple|samsung|google|xiaomi|huawei|sony|canon|nikon|fujifilm|panasonic|olympus|leica|oneplus|motorola|oppo|vivo|lg|pixel|dji/i;
+const EDIT_SOFTWARE =
+  /photoshop|lightroom|snapseed|vsco|picsart|facetune|meitu|canva|pixelmator|affinity photo|capture one|instagram|b612|snow|sodam|beautyplus|foodie|capcut|premiere|final cut|alight motion|luts?/i;
 
 function asciiFromView(view, offset, length) {
   let text = "";
@@ -190,6 +192,23 @@ function finalizeScore(aiSignals, realSignals) {
   return clamp(Math.round(ai), 5, 86);
 }
 
+function finalizeEditScore(editSignals) {
+  let edit = 8 + editSignals.reduce((sum, item) => sum + item.weight, 0);
+  if (editSignals.length === 0) edit = Math.min(edit, 12);
+  else if (editSignals.length === 1) edit = Math.min(edit, 42);
+  return clamp(Math.round(edit), 6, 84);
+}
+
+async function scanAsciiHints(file) {
+  const bytes = new Uint8Array(await file.slice(0, 320 * 1024).arrayBuffer());
+  let text = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    const code = bytes[i];
+    if (code >= 32 && code < 127) text += String.fromCharCode(code);
+  }
+  return text;
+}
+
 function buildCall(ai, _kind, aiSignals) {
   const realChance = 100 - ai;
   const level = ai >= 62 ? "높음" : ai >= 42 ? "주의" : "낮음";
@@ -213,10 +232,10 @@ function buildCall(ai, _kind, aiSignals) {
 function notesFor(kind) {
   return [
     kind === "image"
-      ? "점수는 카메라 정보, 선명도, 색, 입자를 본 휴리스틱입니다. 신호가 없으면 낮게 나옵니다."
-      : "점수는 프레임 움직임, 선명도, 색 분포를 본 휴리스틱입니다. 신호가 없으면 낮게 나옵니다.",
-    "파일 크기 같은 무관한 값으로 점수를 흔들지 않습니다.",
-    "메신저로 받은 사진은 카메라 정보가 빠질 수 있습니다. 가능하면 원본으로 다시 보세요.",
+      ? "생성 점수와 보정 점수는 따로 봅니다. 보정은 포토샵·필터·색보정 흔적이고, AI 생성과는 다릅니다."
+      : "생성 점수와 보정 점수는 따로 봅니다. 영상은 파일 이름·채도로 보정 흔적을 가늠합니다.",
+    "편집 앱 이름이나 매끈함, 채도가 있으면 보정 가능성이 올라갑니다. 보정 여부의 확정은 아닙니다.",
+    "메신저로 받은 파일은 정보가 빠질 수 있습니다. 가능하면 원본으로 다시 보세요.",
   ];
 }
 
@@ -307,7 +326,7 @@ async function analyzeImage(file, onProgress) {
         detail: "입자 없이 전면이 과도하게 선명합니다. 생성 이미지에서 가끔 보이는 패턴입니다.",
       });
     }
-    if (noise < 1.6) {
+    if (noise < 1.6 && !(cameraLabel && CAMERA_MAKE.test(cameraLabel))) {
       aiSignals.push({
         time: 0,
         tone: "ai",
@@ -324,6 +343,7 @@ async function analyzeImage(file, onProgress) {
         detail: "폰 카메라에서 흔히 보이는 미세 입자가 읽혔습니다.",
       });
     }
+
     if (tileSwing < tileMean * 0.05 && sharp > 500) {
       aiSignals.push({
         time: 0,
@@ -342,9 +362,52 @@ async function analyzeImage(file, onProgress) {
       });
     }
 
+    const editSignals = [];
+    const hints = await scanAsciiHints(file);
+    const software = exif?.software ?? "";
+    if (software && EDIT_SOFTWARE.test(software) && !AI_SOFTWARE.test(software)) {
+      editSignals.push({
+        time: 0,
+        tone: "edit",
+        weight: 28,
+        label: "편집 앱 흔적",
+        detail: `소프트웨어 정보에 보정 도구로 보이는 이름이 있습니다. (${software})`,
+      });
+    } else if (EDIT_SOFTWARE.test(hints) && !AI_SOFTWARE.test(hints)) {
+      const hit = hints.match(EDIT_SOFTWARE)?.[0];
+      editSignals.push({
+        time: 0,
+        tone: "edit",
+        weight: 22,
+        label: "파일 안에 보정 도구 이름",
+        detail: `이미지 데이터에 보정 앱 흔적(${hit})이 남아 있습니다.`,
+      });
+    }
+    if (cameraLabel && CAMERA_MAKE.test(cameraLabel) && noise < 2.2) {
+      editSignals.push({
+        time: 0,
+        tone: "edit",
+        weight: 12,
+        label: "촬영 후 다듬은 표면",
+        detail: "카메라 정보는 있는데 입자가 적습니다. 뷰티 필터나 노이즈 제거를 거친 실사에서 자주 보입니다.",
+      });
+    }
+    if (chroma > 92) {
+      editSignals.push({
+        time: 0,
+        tone: "edit",
+        weight: 10,
+        label: "색이 강하게 올라감",
+        detail: "채도가 실제 촬영보다 과장되어 있습니다. 색보정 가능성이 있습니다.",
+      });
+    }
+
     const ai = finalizeScore(aiSignals, realSignals);
-    const { realChance, level, verdict, summary } = buildCall(ai, "image", aiSignals);
-    const marks = [...realSignals, ...aiSignals];
+    const editChance = finalizeEditScore(editSignals);
+    const call = buildCall(ai, "image", aiSignals);
+    const summary =
+      editChance >= 42 ? `${call.summary} 보정 신호도 있습니다. 생성과는 별개로 손질된 사진일 수 있습니다.` : call.summary;
+    const marks = [...realSignals, ...editSignals, ...aiSignals];
     if (marks.length === 0) {
       marks.push({
         time: 0,
@@ -361,11 +424,13 @@ async function analyzeImage(file, onProgress) {
       duration: 0,
       width: img.naturalWidth,
       height: img.naturalHeight,
-      realChance,
+      realChance: call.realChance,
       aiChance: ai,
+      editChance,
       aiSignals: aiSignals.length,
-      level,
-      verdict,
+      editSignals: editSignals.length,
+      level: call.level,
+      verdict: call.verdict,
       summary,
       marks,
       notes: notesFor("image"),
@@ -431,6 +496,7 @@ export async function analyzeVideo(file, onProgress) {
     const avg = (arr) => arr.reduce((s, n) => s + n, 0) / (arr.length || 1);
     const meanDiff = avg(diffs);
     const meanSharp = avg(sharps);
+    const meanChroma = avg(chromas);
     const jitter = avg(diffs.map((d) => Math.abs(d - meanDiff)));
 
     const aiSignals = [];
@@ -488,8 +554,28 @@ export async function analyzeVideo(file, onProgress) {
     });
 
     const ai = finalizeScore(aiSignals, realSignals);
+    const editSignals = [];
+    if (EDIT_SOFTWARE.test(file.name)) {
+      editSignals.push({
+        time: 0,
+        tone: "edit",
+        weight: 18,
+        label: "파일 이름에 편집 앱",
+        detail: "이름에 보정·편집 도구로 보이는 단어가 있습니다.",
+      });
+    }
+    if (meanChroma > 88) {
+      editSignals.push({
+        time: video.duration * 0.3,
+        tone: "edit",
+        weight: 10,
+        label: "색이 강하게 올라감",
+        detail: "채도가 과장되어 있습니다. 색보정 가능성이 있습니다.",
+      });
+    }
+    const editChance = finalizeEditScore(editSignals);
     const { realChance, level, verdict, summary } = buildCall(ai, "video", aiSignals);
-    const marks = [...realSignals, ...aiSignals].slice(0, 4);
+    const marks = [...realSignals, ...editSignals, ...aiSignals].slice(0, 5);
     if (marks.length === 0) {
       marks.push({
         time: video.duration * 0.35,
@@ -508,7 +594,9 @@ export async function analyzeVideo(file, onProgress) {
       height: video.videoHeight,
       realChance,
       aiChance: ai,
+      editChance,
       aiSignals: aiSignals.length,
+      editSignals: editSignals.length,
       level,
       verdict,
       summary,

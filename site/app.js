@@ -88,11 +88,16 @@ function paintWave(level, active) {
 function renderResult(result) {
   clock.textContent = result.kind === "image" ? "STILL" : formatTimecode(result.duration);
   slipTitle.textContent = "결과";
-  slipLead.textContent = `${result.verdict} · 생성 ${result.aiChance}%`;
+  slipLead.textContent = `${result.verdict} · 생성 ${result.aiChance}% · 보정 ${result.editChance ?? 0}%`;
   resultRoot.hidden = false;
   const evidenceTitle = result.kind === "image" ? "관찰 포인트" : "의심 구간";
-  const realFirst = result.aiChance < 42;
   const meters = [
+    {
+      label: "실제 촬영 가능성",
+      value: result.realChance,
+      cls: "",
+      bar: "real",
+    },
     {
       label: "AI로 만들었을 가능성",
       value: result.aiChance,
@@ -100,13 +105,17 @@ function renderResult(result) {
       bar: "",
     },
     {
-      label: "실제 촬영 가능성",
-      value: result.realChance,
-      cls: "",
-      bar: "real",
+      label: "보정 가능성",
+      value: result.editChance ?? 0,
+      cls: "edit",
+      bar: "edit",
     },
   ];
-  if (realFirst) meters.reverse();
+  if (result.aiChance >= 42) {
+    const [real, ai, edit] = meters;
+    meters.length = 0;
+    meters.push(ai, real, edit);
+  }
   resultRoot.innerHTML = `
     <div class="wrap">
       <article class="sheet" aria-live="polite">
@@ -116,7 +125,7 @@ function renderResult(result) {
         </div>
         <div class="sheet-grid">
           <div class="sheet-left">
-            <p class="mono">${result.kind === "image" ? "STILL" : "CLIP"} · 생성 신호 ${result.aiSignals ?? 0}개</p>
+            <p class="mono">${result.kind === "image" ? "STILL" : "CLIP"} · 생성 ${result.aiSignals ?? 0} · 보정 ${result.editSignals ?? 0}</p>
             <h2>${result.verdict}</h2>
             <p>${result.summary}</p>
             <div class="meter">
@@ -138,9 +147,15 @@ function renderResult(result) {
               ${result.marks
                 .map(
                   (mark) => `
-                <li class="${mark.tone === "real" ? "is-real" : mark.tone === "ai" ? "is-ai" : ""}">
+                <li class="${mark.tone === "real" ? "is-real" : mark.tone === "ai" ? "is-ai" : mark.tone === "edit" ? "is-edit" : ""}">
                   <p class="mono">${
-                    mark.tone === "real" ? "REAL" : result.kind === "image" ? "PHOTO" : formatTimecode(mark.time)
+                    mark.tone === "real"
+                      ? "REAL"
+                      : mark.tone === "edit"
+                        ? "EDIT"
+                        : result.kind === "image"
+                          ? "PHOTO"
+                          : formatTimecode(mark.time)
                   }</p>
                   <strong>${mark.label}</strong>
                   <p>${mark.detail}</p>

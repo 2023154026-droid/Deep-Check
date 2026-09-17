@@ -517,6 +517,12 @@ button {
   background: #3f4a3c;
 }
 
+.bar.edit i {
+  background: #8a6a32;
+}
+
+.edit { color: #8a6a32; }
+
 .file-meta {
   margin-top: 1.6rem;
 }
@@ -561,6 +567,7 @@ button {
 .marks li + li { margin-top: 1.2rem; }
 .marks .is-real .mono { color: #3f4a3c; }
 .marks .is-ai .mono { color: #8a4d28; }
+.marks .is-edit .mono { color: #8a6a32; }
 .notes {
   border-top: 1px solid #d4cfc3;
   padding: 1.2rem 1.6rem 1.5rem;
