@@ -103,7 +103,9 @@ export default function App() {
         >
           <div>
             <h1 className="max-w-[16ch] font-display text-[2.15rem] leading-[1.12] font-semibold tracking-[-0.035em] md:text-5xl">
-              의심 영상이나 사진을 모니터에 올리세요
+              의심 영상이나 사진을
+              <br />
+              모니터에 올리세요
             </h1>
             <p className="mt-4 max-w-[38ch] text-base leading-relaxed text-mute">
               분석이 끝나면 점수와 한 장짜리 결과지로 AI 생성 가능성을 보여 줍니다.
