@@ -9,25 +9,40 @@
     />
     <title>딥체크 Deep Check</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <!--
-      THESIS: DeepCheck is a QC booth, not a dark-AI dashboard. The first screen is a monitor plus rundown, refusing a centered neon hero.
-      OWN-WORLD: Graphite console, phosphor amber marks, paper slip as the only printed artifact.
-      STORY: A visitor drops a clip on the monitor, watches the rundown close, and reads possibility plus marked timecodes.
-      FIRST VIEWPORT: Left live monitor (drop zone), right paper rundown, waveform under the tube, primary action on the glass.
-      FORM: Broadcast QC monitor + rundown sheet. Seed 4394fd6b, assigned candidate 7.
-      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
-    -->
-    <header class="wrap">
-      <a class="brand" href="#booth">
-        <strong>딥체크</strong>
-        <span>Deep Check</span>
-      </a>
-      <div class="meta">
-        <span id="clock">00:00:00:00</span>
-        <span class="live"><i></i><b id="status">READY</b></span>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="site-bar">
+      <div class="wrap bar-inner">
+        <a class="brand" href="#booth">
+          <img src="./favicon.svg" width="28" height="28" alt="" />
+          <span class="brand-type">
+            <strong>딥체크</strong>
+            <span>Deep Check</span>
+          </span>
+        </a>
+        <nav class="nav" aria-label="페이지 구간">
+          <a href="#booth">분석</a>
+          <a href="#when">쓰는 때</a>
+          <a href="#method">방법</a>
+          <a href="#faq">질문</a>
+        </nav>
+        <div class="meta">
+          <span id="clock">00:00:00:00</span>
+          <span class="live"><i></i><b id="status">READY</b></span>
+        </div>
       </div>
     </header>
 
@@ -35,7 +50,10 @@
       <section id="booth" class="wrap">
         <div>
           <h1>의심 영상이나 사진을 모니터에 올리세요</h1>
-          <p class="lede">분석이 끝나면 점수와 한 장짜리 결과지로 AI 생성 가능성을 보여 줍니다.</p>
+          <p class="lede">
+            분석이 끝나면 점수와 한 장짜리 결과지로 AI 생성 가능성을 보여 줍니다.
+            확정이 아니라 참고용입니다.
+          </p>
 
           <div class="bezel">
             <div class="bezel-top mono">
@@ -102,7 +120,32 @@
 
       <section class="result-wrap" id="result" hidden></section>
 
-      <section class="method">
+      <section id="when" class="when">
+        <div class="wrap when-grid">
+          <div>
+            <h2>공유하기 직전에 한 번 걸러 보세요</h2>
+            <p>
+              딥체크는 연구소가 아니라, 영상 하나·사진 하나를 넣고 바로 읽는 확인 창구입니다.
+            </p>
+          </div>
+          <ol class="when-list">
+            <li>
+              <span class="mono">CLIP</span>
+              <p>친구가 보낸 연예인·정치 영상이 실제 촬영인지 궁금할 때</p>
+            </li>
+            <li>
+              <span class="mono">STILL</span>
+              <p>뉴스처럼 보이는 사진이나 숏폼을 올리기 전에</p>
+            </li>
+            <li>
+              <span class="mono">WORK</span>
+              <p>과제·발표에 쓸 자료가 생성물처럼 보일 때</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="method" id="method">
         <h2>점수는 가능성이고, 결과지가 근거입니다</h2>
         <div class="method-grid">
           <ol>
@@ -112,14 +155,14 @@
             </li>
             <li>
               <span class="mono">SCAN</span>
-              <p>브라우저에서 프레임을 뽑아 움직임, 선명도, 색 분포를 비교합니다.</p>
+              <p>브라우저에서 카메라 정보, 움직임, 선명도, 색 분포를 비교합니다. 파일이 기기를 나가지 않습니다.</p>
             </li>
             <li>
               <span class="mono">CALL</span>
-              <p>AI로 만들었을 가능성과 실제 촬영 가능성을 나누고, 근거를 결과지에 적습니다.</p>
+              <p>생성 신호가 있을 때만 점수가 올라갑니다. 근거는 결과지에 적습니다.</p>
             </li>
           </ol>
-          <aside class="limit">
+          <aside class="limit" id="limit">
             <h3>한계를 먼저 읽으세요</h3>
             <p>
               딥체크는 연구소 탐지기가 아닙니다. 휴리스틱 신호이며 오탐과 미탐이 있습니다.
@@ -128,12 +171,40 @@
           </aside>
         </div>
       </section>
+
+      <section id="faq" class="faq">
+        <div class="wrap">
+          <h2>결과지를 읽기 전에</h2>
+          <dl>
+            <div>
+              <dt>진짜인지 가짜인지 알려 주나요?</dt>
+              <dd>아닙니다. AI로 만들었을 가능성과 실제 촬영 가능성을 나눠 보여 주는 참고용입니다.</dd>
+            </div>
+            <div>
+              <dt>올린 파일이 서버에 저장되나요?</dt>
+              <dd>분석은 브라우저에서 이뤄집니다. 파일을 클라우드로 보내지 않습니다.</dd>
+            </div>
+            <div>
+              <dt>메신저로 받은 사진도 되나요?</dt>
+              <dd>됩니다. 다만 압축되면 카메라 정보가 빠질 수 있으니, 가능하면 원본으로 올리는 편이 낫습니다.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
     </main>
 
     <footer>
       <div class="wrap foot">
-        <p>딥체크. 결과는 참고용이며 추가 확인이 필요합니다.</p>
-        <p>suna024 / Deep-Check</p>
+        <div class="foot-brand">
+          <strong>딥체크</strong>
+          <p>결과는 참고용이며 추가 확인이 필요합니다.</p>
+        </div>
+        <nav class="foot-nav" aria-label="하단">
+          <a href="#booth">분석</a>
+          <a href="#method">방법</a>
+          <a href="#faq">질문</a>
+        </nav>
+        <p class="mono">Deep Check · local scan</p>
       </div>
     </footer>
     <script type="module" src="./app.js"></script>
