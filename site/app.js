@@ -1,8 +1,9 @@
-import { ACCEPT, analyzeVideo, formatTimecode, validateFile } from "./analyze.js";
+import { ACCEPT, analyzeMedia, formatTimecode, isImageFile, validateFile } from "./analyze.js";
 
 const fileInput = document.querySelector("#file");
 const screen = document.querySelector("#screen");
 const preview = document.querySelector("#preview");
+const still = document.querySelector("#still");
 const empty = document.querySelector("#empty");
 const fileLabel = document.querySelector("#file-label");
 const scanTag = document.querySelector("#scan-tag");
@@ -14,6 +15,8 @@ const errorBox = document.querySelector("#error");
 const resultRoot = document.querySelector("#result");
 const wave = document.querySelector("#wave");
 const rundown = document.querySelector("#rundown");
+const slipTitle = document.querySelector("#slip-title");
+const slipLead = document.querySelector("#slip-lead");
 
 const STEPS = ["ingest", "scan", "marks", "call"];
 let file = null;
@@ -32,6 +35,19 @@ function setError(message) {
   errorBox.textContent = message ?? "";
 }
 
+function showPreview(next) {
+  const image = isImageFile(next);
+  still.hidden = !image;
+  preview.hidden = image;
+  if (image) {
+    still.src = previewUrl;
+    preview.removeAttribute("src");
+  } else {
+    preview.src = previewUrl;
+    still.removeAttribute("src");
+  }
+}
+
 function setFile(next) {
   const message = validateFile(next);
   if (message) {
@@ -41,12 +57,14 @@ function setFile(next) {
   file = next;
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = URL.createObjectURL(next);
-  preview.src = previewUrl;
-  preview.hidden = false;
   empty.hidden = true;
+  showPreview(next);
   fileLabel.textContent = next.name;
   startBtn.disabled = false;
   resultRoot.hidden = true;
+  resultRoot.innerHTML = "";
+  slipTitle.textContent = "큐시트";
+  slipLead.textContent = "분석 시작을 누르면 항목이 닫힙니다.";
   setError(null);
   paintRundown(null, false);
 }
@@ -68,42 +86,51 @@ function paintWave(level, active) {
 }
 
 function renderResult(result) {
-  clock.textContent = formatTimecode(result.duration);
+  clock.textContent = result.kind === "image" ? "STILL" : formatTimecode(result.duration);
+  slipTitle.textContent = "결과";
+  slipLead.textContent = `${result.verdict} · 생성 ${result.aiChance}%`;
   resultRoot.hidden = false;
+  const evidenceTitle = result.kind === "image" ? "관찰 포인트" : "의심 구간";
   resultRoot.innerHTML = `
     <div class="wrap">
-      <article class="sheet">
+      <article class="sheet" aria-live="polite">
+        <div class="verdict-bar">
+          <p class="mono">RESULT SLIP · 결과지</p>
+          <p class="stamp">참고용 · 진위 확정 아님</p>
+        </div>
         <div class="sheet-grid">
           <div class="sheet-left">
-            <p class="mono">CALL SHEET</p>
-            <h2>${result.level}</h2>
+            <p class="mono">${result.kind === "image" ? "STILL" : "CLIP"} · ${result.level}</p>
+            <h2>${result.verdict}</h2>
             <p>${result.summary}</p>
-            <dl class="scores">
-              <div>
-                <dt>실제 가능성</dt>
-                <dd>${result.realChance}<span style="font-size:1.1rem">%</span></dd>
+            <div class="meter">
+              <div class="meter-row">
+                <span>AI로 만들었을 가능성</span>
+                <strong class="ai">${result.aiChance}%</strong>
               </div>
-              <div>
-                <dt>생성 가능성</dt>
-                <dd class="ai">${result.aiChance}<span style="font-size:1.1rem">%</span></dd>
+              <div class="bar" aria-hidden="true"><i style="width:${result.aiChance}%"></i></div>
+              <div class="meter-row">
+                <span>실제 촬영 가능성</span>
+                <strong>${result.realChance}%</strong>
               </div>
-            </dl>
+              <div class="bar real" aria-hidden="true"><i style="width:${result.realChance}%"></i></div>
+            </div>
           </div>
           <div class="sheet-right">
-            <h3>의심 구간</h3>
+            <h3>${evidenceTitle}</h3>
             <ul class="marks">
               ${result.marks
                 .map(
                   (mark) => `
                 <li>
-                  <p class="mono">${formatTimecode(mark.time)}</p>
+                  <p class="mono">${result.kind === "image" ? "PHOTO" : formatTimecode(mark.time)}</p>
                   <strong>${mark.label}</strong>
                   <p>${mark.detail}</p>
                 </li>`,
                 )
                 .join("")}
             </ul>
-            <p class="mono" style="margin-top:1.6rem">${result.width}x${result.height} / ${result.fileName}</p>
+            <p class="mono file-meta">${result.width}×${result.height} / ${result.fileName}</p>
           </div>
         </div>
         <div class="notes">
@@ -138,7 +165,7 @@ startBtn.addEventListener("click", async () => {
   scanTag.textContent = "SCANNING";
   setError(null);
   try {
-    const result = await analyzeVideo(file, (progress) => {
+    const result = await analyzeMedia(file, (progress) => {
       paintRundown(progress, false);
       paintWave(progress.ratio, true);
     });
@@ -164,12 +191,16 @@ clearBtn.addEventListener("click", () => {
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = null;
   preview.removeAttribute("src");
+  still.removeAttribute("src");
   preview.hidden = true;
+  still.hidden = true;
   empty.hidden = false;
-  fileLabel.textContent = "NO CLIP";
+  fileLabel.textContent = "NO INPUT";
   startBtn.disabled = true;
   resultRoot.hidden = true;
   resultRoot.innerHTML = "";
+  slipTitle.textContent = "큐시트";
+  slipLead.textContent = "클립이나 사진이 올라오면 항목이 닫힙니다.";
   setError(null);
   status.textContent = "READY";
   scanTag.textContent = "INPUT";

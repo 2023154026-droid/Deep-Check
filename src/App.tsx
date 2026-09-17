@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   ACCEPT,
-  analyzeVideo,
+  analyzeMedia,
   formatTimecode,
   validateFile,
   type Analysis,
@@ -50,8 +50,14 @@ export default function App() {
     setError(null);
     setResult(null);
     try {
-      const analysis = await analyzeVideo(file, setProgress);
+      const analysis = await analyzeMedia(file, setProgress);
       setResult(analysis);
+      requestAnimationFrame(() => {
+        document.getElementById("result-slip")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "분석에 실패했습니다.");
     } finally {
@@ -80,7 +86,9 @@ export default function App() {
           </span>
         </a>
         <div className="flex items-center gap-5 font-mono text-[11px] text-mute">
-          <span className="hidden sm:inline">{clock}</span>
+          <span className="hidden sm:inline">
+            {result?.kind === "image" ? "STILL" : clock}
+          </span>
           <span className="inline-flex items-center gap-2 text-phosphor">
             <span className="size-1.5 rounded-full bg-phosphor" aria-hidden />
             {busy ? "SCAN" : result ? "HOLD" : "READY"}
@@ -95,10 +103,10 @@ export default function App() {
         >
           <div>
             <h1 className="max-w-[16ch] font-display text-[2.15rem] leading-[1.12] font-semibold tracking-[-0.035em] md:text-5xl">
-              의심 영상을 모니터에 올리세요
+              의심 영상이나 사진을 모니터에 올리세요
             </h1>
             <p className="mt-4 max-w-[38ch] text-base leading-relaxed text-mute">
-              프레임 움직임과 선명도를 읽어 생성 가능성과 의심 구간을 표시합니다.
+              분석이 끝나면 점수와 한 장짜리 결과지로 AI 생성 가능성을 보여 줍니다.
             </p>
             <div className="mt-8">
               <Monitor
@@ -127,7 +135,7 @@ export default function App() {
               >
                 비우기
               </button>
-              <p className="text-sm text-mute">MP4, WebM, MOV / 80MB / 90초</p>
+              <p className="text-sm text-mute">MP4, MOV, JPG, PNG, WebP / 80MB / 영상 90초</p>
             </div>
             {error ? (
               <p className="mt-4 text-sm text-warn" role="alert">
@@ -147,21 +155,24 @@ export default function App() {
         </section>
 
         {result ? (
-          <section className="bg-[color-mix(in_srgb,var(--color-console)_88%,black)]">
+          <section
+            id="result-slip"
+            className="bg-[color-mix(in_srgb,var(--color-console)_88%,black)]"
+          >
             <ResultSlip result={result} />
           </section>
         ) : null}
 
         <section className="mx-auto max-w-[1400px] px-4 py-20 md:px-8">
           <h2 className="font-display text-3xl tracking-[-0.03em] md:text-4xl">
-            점수는 가능성이고, 타임코드가 근거입니다
+            점수는 가능성이고, 결과지가 근거입니다
           </h2>
           <div className="mt-10 grid gap-10 md:grid-cols-[1.1fr_0.9fr]">
             <ol className="space-y-8">
               <li>
                 <p className="font-mono text-phosphor">INGEST</p>
                 <p className="mt-2 max-w-[52ch] text-base leading-relaxed text-mute">
-                  파일을 모니터에 올리면 길이와 형식을 확인합니다. 링크는 받지 않습니다.
+                  영상 또는 사진을 모니터에 올리면 형식과 크기를 확인합니다. 링크는 받지 않습니다.
                 </p>
               </li>
               <li>
@@ -173,7 +184,7 @@ export default function App() {
               <li>
                 <p className="font-mono text-phosphor">CALL</p>
                 <p className="mt-2 max-w-[52ch] text-base leading-relaxed text-mute">
-                  실제 가능성과 생성 가능성을 나누고, 이상 구간을 초 단위로 표시합니다.
+                  AI로 만들었을 가능성과 실제 촬영 가능성을 나누고, 근거를 결과지에 적습니다.
                 </p>
               </li>
             </ol>

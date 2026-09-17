@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="딥체크. 영상을 올리면 AI 생성 또는 조작 가능성과 근거를 보여 줍니다. 결과는 참고용입니다."
+      content="딥체크. 영상이나 사진을 올리면 AI 생성 가능성과 근거를 결과지로 보여 줍니다. 결과는 참고용입니다."
     />
     <title>딥체크 Deep Check</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
@@ -34,19 +34,20 @@
     <main>
       <section id="booth" class="wrap">
         <div>
-          <h1>의심 영상을 모니터에 올리세요</h1>
-          <p class="lede">프레임 움직임과 선명도를 읽어 생성 가능성과 의심 구간을 표시합니다.</p>
+          <h1>의심 영상이나 사진을 모니터에 올리세요</h1>
+          <p class="lede">분석이 끝나면 점수와 한 장짜리 결과지로 AI 생성 가능성을 보여 줍니다.</p>
 
           <div class="bezel">
             <div class="bezel-top mono">
               <span>PGM 1</span>
-              <span id="file-label">NO CLIP</span>
+              <span id="file-label">NO INPUT</span>
             </div>
-            <button class="screen" id="screen" type="button" aria-label="영상 파일 선택">
+            <button class="screen" id="screen" type="button" aria-label="영상 또는 사진 파일 선택">
               <video id="preview" muted playsinline loop autoplay hidden></video>
+              <img id="still" alt="올린 사진 미리보기" hidden />
               <span class="placeholder" id="empty">
                 <b>REC</b>
-                <span>파일을 끌어오거나 클릭해서 선택</span>
+                <span>영상이나 사진을 끌어오거나 클릭해서 선택</span>
               </span>
               <span class="scan-tag" id="scan-tag">INPUT</span>
             </button>
@@ -56,7 +57,7 @@
           <div class="actions">
             <button class="primary" id="start" type="button" disabled>분석 시작</button>
             <button class="ghost" id="clear" type="button">비우기</button>
-            <p class="hint">MP4, WebM, MOV / 80MB / 90초</p>
+            <p class="hint">MP4, MOV, JPG, PNG, WebP / 80MB / 영상 90초</p>
           </div>
           <p class="error" id="error" hidden></p>
           <input id="file" class="sr-only" type="file" />
@@ -64,8 +65,8 @@
 
         <aside class="slip-paper">
           <p class="mono">RUNDOWN</p>
-          <h2>큐시트</h2>
-          <p>클립이 올라오면 항목이 닫힙니다.</p>
+          <h2 id="slip-title">큐시트</h2>
+          <p id="slip-lead">클립이나 사진이 올라오면 항목이 닫힙니다.</p>
           <ol class="rundown" id="rundown">
             <li>
               <span class="mark">····</span>
@@ -85,14 +86,14 @@
               <span class="mark">····</span>
               <div>
                 <p class="mono">MARKS</p>
-                <p>튀는 구간을 타임코드로 남깁니다.</p>
+                <p>튀는 구간이나 사진의 관찰 포인트를 남깁니다.</p>
               </div>
             </li>
             <li>
               <span class="mark">····</span>
               <div>
                 <p class="mono">CALL</p>
-                <p>가능성과 한계를 한 장에 적습니다.</p>
+                <p>점수와 결과지를 한 장에 적습니다.</p>
               </div>
             </li>
           </ol>
@@ -102,12 +103,12 @@
       <section class="result-wrap" id="result" hidden></section>
 
       <section class="method">
-        <h2>점수는 가능성이고, 타임코드가 근거입니다</h2>
+        <h2>점수는 가능성이고, 결과지가 근거입니다</h2>
         <div class="method-grid">
           <ol>
             <li>
               <span class="mono">INGEST</span>
-              <p>파일을 모니터에 올리면 길이와 형식을 확인합니다. 링크는 받지 않습니다.</p>
+              <p>영상 또는 사진을 모니터에 올리면 형식과 크기를 확인합니다. 링크는 받지 않습니다.</p>
             </li>
             <li>
               <span class="mono">SCAN</span>
@@ -115,7 +116,7 @@
             </li>
             <li>
               <span class="mono">CALL</span>
-              <p>실제 가능성과 생성 가능성을 나누고, 이상 구간을 초 단위로 표시합니다.</p>
+              <p>AI로 만들었을 가능성과 실제 촬영 가능성을 나누고, 근거를 결과지에 적습니다.</p>
             </li>
           </ol>
           <aside class="limit">

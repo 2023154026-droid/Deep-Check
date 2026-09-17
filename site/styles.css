@@ -145,7 +145,8 @@ h1 {
 
 .screen.is-hot { border-color: var(--phosphor); }
 
-.screen video {
+.screen video,
+.screen img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -311,13 +312,84 @@ button {
 
 .result-wrap {
   background: color-mix(in srgb, var(--console) 88%, black);
-  padding: 4rem 0;
+  padding: 4rem 0 5.5rem;
 }
 
 .sheet {
   background: var(--paper);
   color: var(--stamp);
   box-shadow: 0 22px 50px rgba(8, 10, 12, 0.38);
+}
+
+.verdict-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.7rem 1.2rem;
+  padding: 1rem 1.6rem;
+  border-bottom: 1px solid #d4cfc3;
+  background: color-mix(in srgb, var(--paper) 70%, #ddd6c6);
+}
+
+.stamp {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a4d28;
+}
+
+.meter {
+  margin-top: 1.8rem;
+}
+
+.meter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 0.95rem;
+  color: #5c6158;
+}
+
+.meter-row + .meter-row {
+  margin-top: 1.1rem;
+}
+
+.meter-row strong {
+  font-family: var(--display);
+  font-size: 1.7rem;
+  letter-spacing: -0.04em;
+  color: var(--stamp);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  margin: 0.4rem 0 0;
+  height: 8px;
+  background: #d8d3c6;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: #8a4d28;
+}
+
+.bar.real i {
+  background: #3f4a3c;
+}
+
+.file-meta {
+  margin-top: 1.6rem;
+}
+
+.sheet h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.4rem;
+  letter-spacing: -0.03em;
 }
 
 .sheet-grid { display: grid; }
@@ -377,6 +449,7 @@ footer {
   .screen { min-height: 320px; }
   .method-grid { grid-template-columns: 1.1fr 0.9fr; }
   .sheet-grid { grid-template-columns: 0.9fr 1.1fr; }
+  .verdict-bar { padding: 1.1rem 2.4rem; }
   .sheet-left, .sheet-right, .notes { padding: 2.4rem; }
   .sheet-left { border-bottom: 0; border-right: 1px solid #d4cfc3; }
   .foot { flex-direction: row; justify-content: space-between; align-items: center; }

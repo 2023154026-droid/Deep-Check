@@ -3,8 +3,8 @@ import type { Analysis, Progress } from "../lib/analyze";
 const STEPS = [
   { id: "ingest", title: "INGEST", copy: "파일 형식과 길이를 받습니다." },
   { id: "scan", title: "SCAN", copy: "프레임을 뽑아 신호를 비교합니다." },
-  { id: "marks", title: "MARKS", copy: "튀는 구간을 타임코드로 남깁니다." },
-  { id: "call", title: "CALL", copy: "가능성과 한계를 한 장에 적습니다." },
+  { id: "marks", title: "MARKS", copy: "튀는 구간이나 사진의 관찰 포인트를 남깁니다." },
+  { id: "call", title: "CALL", copy: "점수와 결과지를 한 장에 적습니다." },
 ] as const;
 
 function mark(done: boolean, current: boolean) {
@@ -32,9 +32,13 @@ export function Rundown({ progress, result, fileName }: Props) {
       <p className="font-mono text-[11px] tracking-[0.16em] text-[#5c6158]">
         RUNDOWN
       </p>
-      <p className="mt-2 font-display text-2xl tracking-[-0.03em]">큐시트</p>
+      <p className="mt-2 font-display text-2xl tracking-[-0.03em]">
+        {result ? "결과" : "큐시트"}
+      </p>
       <p className="mt-2 text-sm leading-relaxed text-[#4f544c]">
-        {fileName ?? "클립이 올라오면 항목이 닫힙니다."}
+        {result
+          ? `${result.verdict} · 생성 ${result.aiChance}%`
+          : (fileName ?? "클립이나 사진이 올라오면 항목이 닫힙니다.")}
       </p>
       <ol className="mt-6 space-y-4">
         {STEPS.map((step, index) => {
