@@ -91,6 +91,22 @@ function renderResult(result) {
   slipLead.textContent = `${result.verdict} · 생성 ${result.aiChance}%`;
   resultRoot.hidden = false;
   const evidenceTitle = result.kind === "image" ? "관찰 포인트" : "의심 구간";
+  const realFirst = result.aiChance < 42;
+  const meters = [
+    {
+      label: "AI로 만들었을 가능성",
+      value: result.aiChance,
+      cls: "ai",
+      bar: "",
+    },
+    {
+      label: "실제 촬영 가능성",
+      value: result.realChance,
+      cls: "",
+      bar: "real",
+    },
+  ];
+  if (realFirst) meters.reverse();
   resultRoot.innerHTML = `
     <div class="wrap">
       <article class="sheet" aria-live="polite">
@@ -100,20 +116,20 @@ function renderResult(result) {
         </div>
         <div class="sheet-grid">
           <div class="sheet-left">
-            <p class="mono">${result.kind === "image" ? "STILL" : "CLIP"} · ${result.level}</p>
+            <p class="mono">${result.kind === "image" ? "STILL" : "CLIP"} · 생성 신호 ${result.aiSignals ?? 0}개</p>
             <h2>${result.verdict}</h2>
             <p>${result.summary}</p>
             <div class="meter">
+              ${meters
+                .map(
+                  (row) => `
               <div class="meter-row">
-                <span>AI로 만들었을 가능성</span>
-                <strong class="ai">${result.aiChance}%</strong>
+                <span>${row.label}</span>
+                <strong class="${row.cls}">${row.value}%</strong>
               </div>
-              <div class="bar" aria-hidden="true"><i style="width:${result.aiChance}%"></i></div>
-              <div class="meter-row">
-                <span>실제 촬영 가능성</span>
-                <strong>${result.realChance}%</strong>
-              </div>
-              <div class="bar real" aria-hidden="true"><i style="width:${result.realChance}%"></i></div>
+              <div class="bar ${row.bar}" aria-hidden="true"><i style="width:${row.value}%"></i></div>`,
+                )
+                .join("")}
             </div>
           </div>
           <div class="sheet-right">
@@ -122,8 +138,10 @@ function renderResult(result) {
               ${result.marks
                 .map(
                   (mark) => `
-                <li>
-                  <p class="mono">${result.kind === "image" ? "PHOTO" : formatTimecode(mark.time)}</p>
+                <li class="${mark.tone === "real" ? "is-real" : mark.tone === "ai" ? "is-ai" : ""}">
+                  <p class="mono">${
+                    mark.tone === "real" ? "REAL" : result.kind === "image" ? "PHOTO" : formatTimecode(mark.time)
+                  }</p>
                   <strong>${mark.label}</strong>
                   <p>${mark.detail}</p>
                 </li>`,

@@ -7,6 +7,7 @@ export type Mark = {
   time: number;
   label: string;
   detail: string;
+  tone?: "ai" | "real";
 };
 
 export type Analysis = {
@@ -17,6 +18,7 @@ export type Analysis = {
   height: number;
   realChance: number;
   aiChance: number;
+  aiSignals: number;
   level: "낮음" | "주의" | "높음";
   verdict: string;
   summary: string;
@@ -230,15 +232,23 @@ async function analyzeImage(
     onProgress({ stage: "marks", ratio: 0.82, message: "관찰 포인트를 적는 중" });
     await wait(160);
 
-    let ai = 30;
-    if (sharp > 900 && noise < 6) ai += 18;
-    if (sharp < 90) ai += 12;
-    if (chroma < 14) ai += 10;
-    if (chroma > 90) ai += 8;
-    if (noise < 3.5) ai += 14;
-    if (tileSwing < tileMean * 0.12) ai += 10;
-    if (img.naturalWidth < 640) ai -= 4;
-    ai = clamp(Math.round(ai + (file.size % 7) - 3), 12, 88);
+    let ai = 8;
+    let aiSignals = 0;
+    if (sharp > 1400 && noise < 2.2) {
+      ai += 16;
+      aiSignals += 1;
+    }
+    if (noise < 1.6) {
+      ai += 10;
+      aiSignals += 1;
+    }
+    if (tileSwing < tileMean * 0.05 && sharp > 500) {
+      ai += 10;
+      aiSignals += 1;
+    }
+    if (aiSignals === 0) ai = Math.min(ai, 11);
+    else if (aiSignals === 1) ai = Math.min(ai, 34);
+    ai = clamp(Math.round(ai), 5, 86);
 
     const { realChance, level, verdict, summary } = buildCall(ai, "image");
     const marks: Mark[] = [];
@@ -284,6 +294,7 @@ async function analyzeImage(
       height: img.naturalHeight,
       realChance,
       aiChance: ai,
+      aiSignals,
       level,
       verdict,
       summary,
@@ -361,14 +372,15 @@ export async function analyzeVideo(
     const jitter = avg(diffs.map((d) => Math.abs(d - meanDiff)));
     const sharpSwing = avg(sharps.map((s) => Math.abs(s - meanSharp)));
 
-    let ai = 28;
-    if (meanDiff < 4.2) ai += 18;
-    if (jitter > meanDiff * 0.85 && meanDiff > 6) ai += 14;
-    if (meanSharp < 180) ai += 12;
-    if (sharpSwing > meanSharp * 0.7) ai += 10;
-    if (meanChroma < 18) ai += 8;
-    if (video.videoWidth < 720) ai -= 4;
-    ai = clamp(Math.round(ai + (file.size % 7) - 3), 12, 88);
+    let ai = 8;
+    if (meanDiff < 2.4) ai += 16;
+    if (jitter > meanDiff * 1.15 && meanDiff > 8) ai += 12;
+    if (meanSharp < 70 && meanDiff < 3) ai += 10;
+    const videoSignals = Number(meanDiff < 2.4) + Number(jitter > meanDiff * 1.15 && meanDiff > 8) + Number(meanSharp < 70 && meanDiff < 3);
+    if (videoSignals === 0) ai = Math.min(ai, 11);
+    else if (videoSignals === 1) ai = Math.min(ai, 34);
+    ai = clamp(Math.round(ai), 5, 86);
+    const aiSignals = videoSignals;
 
     const { realChance, level, verdict, summary } = buildCall(ai, "video");
     const marks: Mark[] = [];
@@ -403,6 +415,7 @@ export async function analyzeVideo(
       height: video.videoHeight,
       realChance,
       aiChance: ai,
+      aiSignals,
       level,
       verdict,
       summary,

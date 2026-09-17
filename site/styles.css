@@ -423,6 +423,8 @@ button {
 
 .marks { list-style: none; padding: 0; margin: 1.4rem 0 0; }
 .marks li + li { margin-top: 1.2rem; }
+.marks .is-real .mono { color: #3f4a3c; }
+.marks .is-ai .mono { color: #8a4d28; }
 .notes {
   border-top: 1px solid #d4cfc3;
   padding: 1.2rem 1.6rem 1.5rem;
